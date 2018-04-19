@@ -95,9 +95,9 @@ func runList(cmd *cli.Command, args []string) error {
 
 	switch *kind {
 	case "tm":
-		return showPackets(f, mud.DecodeTM(), 10)
+		return showPackets(f, panda.DecodeTM(), 10)
 	case "pp":
-		return showPackets(f, mud.DecodePP(), 12)
+		return showPackets(f, panda.DecodePP(), 12)
 	case "", "raw":
 		return showItems(f, *sum, *cumul)
 	default:
@@ -105,15 +105,15 @@ func runList(cmd *cli.Command, args []string) error {
 	}
 }
 
-func showPackets(r io.Reader, d mud.Decoder, skip int) error {
-	rs := mud.NewReader(scan(r), mud.DecoderFunc(decodeItem))
+func showPackets(r io.Reader, d panda.Decoder, skip int) error {
+	rs := panda.NewReader(scan(r), panda.DecoderFunc(decodeItem))
 
 	var count uint32
 	for {
 		i, err := rs.Read()
 		switch err {
 		case nil:
-		case mud.ErrDone:
+		case panda.ErrDone:
 			return nil
 		default:
 			return err
@@ -125,7 +125,7 @@ func showPackets(r io.Reader, d mud.Decoder, skip int) error {
 
 		count++
 		switch p := p.(type) {
-		case mud.Telemetry:
+		case panda.Telemetry:
 			ds := p.Data
 			if len(ds) >= 4 {
 				ds = p.Data[:4]
@@ -142,7 +142,7 @@ func showPackets(r io.Reader, d mud.Decoder, skip int) error {
 				e.PacketType(),
 				ds,
 			)
-		case mud.Parameter:
+		case panda.Parameter:
 			u := p.UMIHeader
 			log.Printf(pp,
 				count,
@@ -163,7 +163,7 @@ func showPackets(r io.Reader, d mud.Decoder, skip int) error {
 }
 
 func showItems(r io.Reader, sum, cumul bool) error {
-	rs := mud.NewReader(scan(r), mud.DecoderFunc(decodeItem))
+	rs := panda.NewReader(scan(r), panda.DecoderFunc(decodeItem))
 
 	var (
 		count, size uint64
@@ -173,7 +173,7 @@ func showItems(r io.Reader, sum, cumul bool) error {
 		p, err := rs.Read()
 		switch err {
 		case nil:
-		case mud.ErrDone:
+		case panda.ErrDone:
 			log.Printf("%d packets (%fKB) %s\n", count, float64(size)/1024, duration)
 			return nil
 		default:
@@ -194,9 +194,9 @@ func showItems(r io.Reader, sum, cumul bool) error {
 		switch p := i.Packet[0]; p {
 		default:
 			continue
-		case mud.TagTM:
+		case panda.TagTM:
 			kind, num = "tm", 1
-		case mud.TagPP:
+		case panda.TagPP:
 			kind, num = "pp", binary.BigEndian.Uint16(i.Packet[10:12])
 		}
 		e := i.Elapsed
@@ -213,7 +213,7 @@ func showItems(r io.Reader, sum, cumul bool) error {
 	}
 }
 
-func decodePacket(p mud.Packet, d mud.Decoder, s int) (mud.Packet, error) {
+func decodePacket(p panda.Packet, d panda.Decoder, s int) (panda.Packet, error) {
 	i, ok := p.(*item)
 	if !ok {
 		return nil, fmt.Errorf("invalid packet type")

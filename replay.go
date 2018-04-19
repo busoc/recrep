@@ -79,7 +79,7 @@ type item struct {
 	Packet  []byte
 }
 
-func decodeItem(bs []byte) (int, mud.Packet, error) {
+func decodeItem(bs []byte) (int, panda.Packet, error) {
 	e := binary.BigEndian.Uint64(bs[:8])
 	i := &item{
 		Elapsed: time.Duration(e),
@@ -103,7 +103,7 @@ func (i *item) Timestamp() time.Time {
 }
 
 type forwarder struct {
-	*mud.Reader
+	*panda.Reader
 	file *os.File
 
 	limit int
@@ -120,7 +120,7 @@ func forward(file string, count, rate int) (io.ReadCloser, error) {
 		return nil, err
 	}
 	return &forwarder{
-		Reader: mud.NewReader(scan(f), mud.DecoderFunc(decodeItem)),
+		Reader: panda.NewReader(scan(f), panda.DecoderFunc(decodeItem)),
 		file:   f,
 		limit:  count,
 		rate:   time.Duration(rate),
@@ -139,7 +139,7 @@ func (f *forwarder) Read(bs []byte) (int, error) {
 		}
 		log.Printf("write: %d, elapsed: %s, sum: %x", len(i.Packet), i.Elapsed, md5.Sum(i.Packet))
 		return copy(bs, i.Payload()), nil
-	case mud.ErrDone:
+	case panda.ErrDone:
 		f.Reader.Close()
 		f.file.Close()
 		if f.count += 1; f.limit > 0 && f.count >= f.limit {
@@ -149,7 +149,7 @@ func (f *forwarder) Read(bs []byte) (int, error) {
 		if f.file, err = os.Open(f.file.Name()); err != nil {
 			return 0, err
 		}
-		f.Reader = mud.NewReader(scan(f.file), mud.DecoderFunc(decodeItem))
+		f.Reader = panda.NewReader(scan(f.file), panda.DecoderFunc(decodeItem))
 		return f.Read(bs)
 	default:
 		return 0, err
