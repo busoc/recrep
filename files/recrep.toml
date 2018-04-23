@@ -1,0 +1,30 @@
+location = "var/deb/recrep-0.1.deb"
+
+[control]
+package      = "recrep"
+version      = "0.1"
+license      = "agpl"
+section      = "utils"
+priority     = "optional"
+arch         = "amd64"
+vendor       = "busoc"
+homepage     = "https://github.com/busoc/recrep"
+depends      = ["libc6"]
+summary      = "record and replay stream from/to multicast groups"
+
+maintainer   = {
+  name  = "Nicolas Brun",
+  email = "nicolas.brun@busoc.be",
+}
+compiler = "go-1.10"
+
+[[resource]]
+source      = "bin/recrep-0.1"
+destination = "usr/bin/"
+filename    = "recrep"
+mode = 0755
+
+[[resource]]
+source = "src/github.com/busoc/recrep/LICENSE"
+destination = "usr/share/doc/recrep/"
+filename = "copyright"
